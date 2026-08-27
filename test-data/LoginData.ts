@@ -1,52 +1,52 @@
 export const ValidLoginData = {
     standardUser: {
-        username: "standard_user",
-        password: "secret_sauce"
+        username: process.env.STANDARD_USER || "standard_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce"
     },
 
     problemUser: {
-        username: "problem_user",
-        password: "secret_sauce",
+        username: process.env.PROBLEM_USER ||"problem_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce",
     },
 
     performanceGlitchUser: {
-        username: "performance_glitch_user",
-        password: "secret_sauce"
+        username: process.env.PERFORMANCE_GLITCH_USER || "performance_glitch_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce"
     },
 
     errorUser: {
-        username: "error_user",
-        password: "secret_sauce"
+        username: process.env.ERROR_USER || "error_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce"
     },
 
     visualUser: {
-        username: "visual_user",
-        password: "secret_sauce"
+        username: process.env.VISUAL_USER || "visual_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce"
     }
 
 }
 
 export const InvalidLoginData = {
     lockedOutUser: {
-        username: "locked_out_user",
-        password: "secret_sauce",
+        username: process.env.LOCKED_OUT_USER || "locked_out_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce",
         expectedError: "Epic sadface: Sorry, this user has been locked out."
     },
 
     wrongPassword: {
-        username: "standard_user",
-        password: "invalidPassword",
+        username: process.env.STANDARD_USER || "standard_user",
+        password: process.env.INVALID_PASSWORD || "invalidPassword",
         expectedError: "Epic sadface: Username and password do not match any user in this service"
     },
 
     emptyUsername: {
         username: "",
-        password: "secret_sauce",
+        password: process.env.SHARED_PASSWORD || "secret_sauce",
         expectedError: "Epic sadface: Username is required"
     },
 
     emptyPassword: {
-        username: "standard_user",
+        username: process.env.STANDARD_USER || "standard_user",
         password: "",
         expectedError: "Epic sadface: Password is required"
     }
