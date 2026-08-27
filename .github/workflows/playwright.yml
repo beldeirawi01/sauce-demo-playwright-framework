@@ -21,6 +21,14 @@ jobs:
       run: npx playwright test
       env:
         BASE_URL: ${{ secrets.BASE_URL }}
+        STANDARD_USER: ${{ secrets.STANDARD_USER }}
+        PROBLEM_USER: ${{ secrets.PROBLEM_USER }}
+        PERFORMANCE_GLITCH_USER: ${{ secrets.PERFORMANCE_GLITCH_USER }}
+        ERROR_USER: ${{ secrets.ERROR_USER }}
+        VISUAL_USER: ${{ secrets.VISUAL_USER }}
+        LOCKED_OUT_USER: ${{ secrets.LOCKED_OUT_USER }}
+        SHARED_PASSWORD: ${{ secrets.SHARED_PASSWORD }}
+        INVALID_PASSWORD: ${{ secrets.INVALID_PASSWORD }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
