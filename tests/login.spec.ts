@@ -40,7 +40,7 @@ test.describe("Login Page Functionality", () => {
     })
 
     test.describe("Empty Password", () => {
-        test("Validate wronf credentials with empty password", async ({ page }) => {
+        test("Validate wrong credentials with empty password", async ({ page }) => {
             await loginPage.login(InvalidLoginData.emptyPassword.username, InvalidLoginData.emptyPassword.password)
             await expect (loginPage.errorMessage).toContainText(InvalidLoginData.emptyPassword.expectedError)
         })
