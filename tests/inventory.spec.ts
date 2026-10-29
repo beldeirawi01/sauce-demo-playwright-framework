@@ -45,4 +45,21 @@ test.describe("Inventory Page Functionality", () => {
             expect (page.url()).toContain('/cart')
         })
     })
+
+    test.describe("Sort Items From A-Z and Z-A", { tag: "@regression" }, () => {
+        test("Validate Sorting A-Z", async ({ inventoryPage }) => {
+            await inventoryPage.sortBy('za')
+            await inventoryPage.sortBy('az')
+            const itemNames = await inventoryPage.getItemNames();
+            const sortedNames = [...itemNames].sort((a, b) => a.localeCompare(b));
+            expect(itemNames).toEqual(sortedNames);
+        })
+
+        test("Validate Sorting Z-A", async ({ inventoryPage }) => {
+            await inventoryPage.sortBy('za')
+            const itemNames = await inventoryPage.getItemNames();
+            const sortedNames = [...itemNames].sort((a, b) => b.localeCompare(a));
+            expect(itemNames).toEqual(sortedNames);
+        })
+    })
 })
