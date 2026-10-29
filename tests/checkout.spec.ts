@@ -1,60 +1,41 @@
-import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { InventoryPage } from '../pages/InventoryPage';
-import { CartPage } from '../pages/CartPage';
-import { CheckoutPage } from '../pages/CheckoutPage';
-import { ValidLoginData } from '../test-data/LoginData';
+import { test, expect } from './fixtures';
+
 import { ValidCheckoutData, InvalidCheckoutData, CheckoutExpectedValues } from '../test-data/CheckoutData';
 
 test.describe("Checkout Process", () => {
-    let loginPage: LoginPage;
-    let inventoryPage: InventoryPage;
-    let cartPage: CartPage;
-    let checkoutPage: CheckoutPage;
 
-    test.beforeEach(async ({ page }) => {
-        loginPage = new LoginPage(page);
-        inventoryPage = new InventoryPage(page);
-        cartPage = new CartPage(page);
-        checkoutPage = new CheckoutPage(page);
-
-        // Login and add items to cart
-        await loginPage.goto();
-        await loginPage.login(ValidLoginData.standardUser.username, ValidLoginData.standardUser.password);
+    test.beforeEach(async ({ inventoryPage }) => {
         await inventoryPage.addToCart('sauce-labs-backpack');
         await inventoryPage.addToCart('sauce-labs-bike-light');
-        
-        // Navigate to cart
         await inventoryPage.cartIcon.click();
     });
 
-    test.describe("Cart Page Navigation", () => {
-        test("Validate cart page displays correct number of items", async ({ page }) => {
-            const cartItemCount = await cartPage.getCartItemCount();
-            expect(cartItemCount).toBe(2);
+    test.describe("Cart Page Navigation", { tag: "@regression" }, () => {
+        test("Validate cart page displays correct number of items", async ({ cartPage }) => {
+            await expect(cartPage.cartItems).toHaveCount(2);
         });
 
-        test("Validate checkout button is visible on cart page", async ({ page }) => {
+        test("Validate checkout button is visible on cart page", async ({ cartPage }) => {
             await expect(cartPage.checkoutButton).toBeVisible();
         });
 
-        test("Validate continue shopping button is visible", async ({ page }) => {
+        test("Validate continue shopping button is visible", async ({ cartPage   }) => {
             await expect(cartPage.continueShoppingButton).toBeVisible();
         });
 
-        test("Navigate back to inventory from cart", async ({ page }) => {
+        test("Navigate back to inventory from cart", async ({ page, cartPage }) => {
             await cartPage.continueShopping();
             expect(page.url()).toContain("/inventory");
         });
     });
 
-    test.describe("Checkout Step One - Customer Information", () => {
-        test.beforeEach(async ({ page }) => {
+    test.describe("Checkout Step One - Customer Information", { tag: "@regression" }, () => {
+        test.beforeEach(async ({ cartPage }) => {
             // Navigate to checkout
             await cartPage.checkout();
         });
 
-        test("Validate successful checkout with valid customer info", async ({ page }) => {
+        test("Validate successful checkout with valid customer info", async ({ page, checkoutPage }) => {
             await checkoutPage.fillCustomerInfo(
                 ValidCheckoutData.standardCustomer.firstName,
                 ValidCheckoutData.standardCustomer.lastName,
@@ -64,7 +45,7 @@ test.describe("Checkout Process", () => {
             expect(page.url()).toContain("/checkout-step-two");
         });
 
-        test("Validate error message when first name is empty", async ({ page }) => {
+        test("Validate error message when first name is empty", async ({ checkoutPage }) => {
             await checkoutPage.fillCustomerInfo(
                 InvalidCheckoutData.emptyFirstName.firstName,
                 InvalidCheckoutData.emptyFirstName.lastName,
@@ -74,7 +55,7 @@ test.describe("Checkout Process", () => {
             await expect(checkoutPage.errorMessage).toContainText(InvalidCheckoutData.emptyFirstName.expectedError);
         });
 
-        test("Validate error message when last name is empty", async ({ page }) => {
+        test("Validate error message when last name is empty", async ({ checkoutPage }) => {
             await checkoutPage.fillCustomerInfo(
                 InvalidCheckoutData.emptyLastName.firstName,
                 InvalidCheckoutData.emptyLastName.lastName,
@@ -84,7 +65,7 @@ test.describe("Checkout Process", () => {
             await expect(checkoutPage.errorMessage).toContainText(InvalidCheckoutData.emptyLastName.expectedError);
         });
 
-        test("Validate error message when postal code is empty", async ({ page }) => {
+        test("Validate error message when postal code is empty", async ({ checkoutPage }) => {
             await checkoutPage.fillCustomerInfo(
                 InvalidCheckoutData.emptyPostalCode.firstName,
                 InvalidCheckoutData.emptyPostalCode.lastName,
@@ -94,17 +75,17 @@ test.describe("Checkout Process", () => {
             await expect(checkoutPage.errorMessage).toContainText(InvalidCheckoutData.emptyPostalCode.expectedError);
         });
 
-        test("Validate error message with all fields empty", async ({ page }) => {
+        test("Validate error message with all fields empty", async ({ checkoutPage }) => {
             await checkoutPage.continue();
             await expect(checkoutPage.errorMessage).toContainText(InvalidCheckoutData.allFieldsEmpty.expectedError);
         });
 
-        test("Validate cancel button returns to cart", async ({ page }) => {
+        test("Validate cancel button returns to cart", async ({ page, checkoutPage }) => {
             await checkoutPage.cancel();
             expect(page.url()).toContain("/cart");
         });
 
-        test("Validate checkout with alternative customer data", async ({ page }) => {
+        test("Validate checkout with alternative customer data", async ({ page, checkoutPage }) => {
             await checkoutPage.fillCustomerInfo(
                 ValidCheckoutData.alternativeCustomer.firstName,
                 ValidCheckoutData.alternativeCustomer.lastName,
@@ -115,8 +96,8 @@ test.describe("Checkout Process", () => {
         });
     });
 
-    test.describe("Checkout Step Two - Order Overview", () => {
-        test.beforeEach(async ({ page }) => {
+    test.describe("Checkout Step Two - Order Overview", { tag: "@regression" }, () => {
+        test.beforeEach(async ({ page, cartPage, checkoutPage }) => {
             // Navigate to checkout and fill customer info
             await cartPage.checkout();
             await checkoutPage.fillCustomerInfo(
@@ -125,40 +106,43 @@ test.describe("Checkout Process", () => {
                 ValidCheckoutData.standardCustomer.postalCode
             );
             await checkoutPage.continue();
+            await expect(page).toHaveURL(/checkout-step-two/); 
         });
 
-        test("Validate order overview page displays cart items", async ({ page }) => {
-            const itemCount = await checkoutPage.getCartItemCount();
-            expect(itemCount).toBeGreaterThan(0);
+        test("Validate order overview page displays cart items", async ({ checkoutPage }) => {
+            await expect(checkoutPage.cartItems).toHaveCount(2);
         });
 
-        test("Validate subtotal is displayed on order overview", async ({ page }) => {
-            const subtotal = await checkoutPage.getSubtotal();
-            expect(subtotal).toContain("Item total");
+        test("Validate subtotal is displayed on order overview", async ({ checkoutPage }) => {
+            //const subtotal = await checkoutPage.getSubtotal();
+            //expect(subtotal).toContain("Item total");
+            await expect(checkoutPage.subtotalLabel).toContainText("Item total");
         });
 
-        test("Validate tax is displayed on order overview", async ({ page }) => {
-            const tax = await checkoutPage.getTax();
-            expect(tax).toContain("Tax");
+        test("Validate tax is displayed on order overview", async ({ checkoutPage }) => {
+            //const tax = await checkoutPage.getTax();
+            //expect(tax).toContain("Tax");
+            await expect(checkoutPage.taxLabel).toContainText("Tax");
         });
 
-        test("Validate total is displayed on order overview", async ({ page }) => {
-            const total = await checkoutPage.getTotal();
-            expect(total).toContain("Total");
+        test("Validate total is displayed on order overview", async ({ checkoutPage }) => {
+            //const total = await checkoutPage.getTotal();
+            //expect(total).toContain("Total");
+            await expect(checkoutPage.totalLabel).toContainText("Total");
         });
 
-        test("Validate finish button is visible on order overview", async ({ page }) => {
+        test("Validate finish button is visible on order overview", async ({ checkoutPage }) => {
             await expect(checkoutPage.finishButton).toBeVisible();
         });
 
-        test("Validate cancel button on order overview returns to cart", async ({ page }) => {
+        test("Validate cancel button on order overview returns to cart", async ({ page, checkoutPage }) => {
             await checkoutPage.cancel();
             expect(page.url()).toContain("/inventory");
         });
     });
 
-    test.describe("Checkout Complete", () => {
-        test("Validate successful order completion", async ({ page }) => {
+    test.describe("Checkout Complete", { tag: "@regression" }, () => {
+        test("Validate successful order completion", async ({ page, cartPage, checkoutPage }) => {
             // Navigate through checkout
             await cartPage.checkout();
             await checkoutPage.fillCustomerInfo(
@@ -173,7 +157,7 @@ test.describe("Checkout Process", () => {
             expect(page.url()).toContain("/checkout-complete");
         });
 
-        test("Validate order confirmation heading is displayed", async ({ page }) => {
+        test("Validate order confirmation heading is displayed", async ({ page, cartPage, checkoutPage }) => {
             // Navigate through checkout
             await cartPage.checkout();
             await checkoutPage.fillCustomerInfo(
@@ -190,11 +174,10 @@ test.describe("Checkout Process", () => {
         });
     });
 
-    test.describe("Full Checkout Journey", () => {
-        test("Complete end-to-end checkout with standard user", async ({ page }) => {
+    test.describe("Full Checkout Journey", { tag: "@smoke" }, () => {
+        test("Complete end-to-end checkout with standard user", async ({ page, cartPage, checkoutPage }) => {
             // Step 1: Verify cart
-            const cartItems = await cartPage.getCartItemCount();
-            expect(cartItems).toBe(2);
+            await expect(cartPage.cartItems).toHaveCount(2);
 
             // Step 2: Proceed to checkout
             await cartPage.checkout();
@@ -210,8 +193,7 @@ test.describe("Checkout Process", () => {
             expect(page.url()).toContain("/checkout-step-two");
 
             // Step 4: Verify order overview
-            const overviewItems = await checkoutPage.getCartItemCount();
-            expect(overviewItems).toBeGreaterThan(0);
+            await expect(checkoutPage.cartItems).toHaveCount(2);
 
             // Step 5: Complete order
             await checkoutPage.finish();
