@@ -37,7 +37,7 @@ test.describe("Cart", { tag: "@regression" }, () => {
     })
 
     test.describe("Validate Empty Cart", () => {
-        test("Validate cart paage shows no items when no items are added to cart", async ({ inventoryPage, cartPage }) => {
+        test("Validate cart page shows no items when no items are added to cart", async ({ inventoryPage, cartPage }) => {
             await inventoryPage.cartIcon.click()
             await expect (cartPage.cartItems).toHaveCount(0)
             await expect (inventoryPage.cartNumber).not.toBeVisible()
