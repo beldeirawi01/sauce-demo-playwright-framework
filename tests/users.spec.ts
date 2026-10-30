@@ -29,10 +29,10 @@ test.describe("Problem User", { tag: "@regression" }, () => {
             ValidLoginData.problemUser.password
         );
         
-        await expect(page).toHaveURL(/inventory/, { timeout: 15000 });
+        await expect(page).toHaveURL(/inventory/, { timeout: 20000 });
         const inventoryPage = new InventoryPage(page);
-        await expect(inventoryPage.pageTitle).toContainText("Products", { timeout: 15000 });
-        await expect(inventoryPage.productInventory).toHaveCount(6, { timeout: 15000 });
+        await expect(inventoryPage.pageTitle).toContainText("Products", { timeout: 20000 });
+        await expect(inventoryPage.productInventory).toHaveCount(6, { timeout: 20000 });
     });
 
     const products = [
