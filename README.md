@@ -1,85 +1,136 @@
 # Sauce Demo Playwright Framework
 
-A Page Object Model (POM) based automated test framework built with Playwright and TypeScript, targeting [SauceDemo](https://www.saucedemo.com). This project was built as a hands-on portfolio piece to demonstrate automation framework design, locator strategy, and data-driven testing — covering the full user journey from login through checkout — skills directly relevant to a QA Engineer II role.
+[![Playwright Tests](https://github.com/beldeirawi01/sauce-demo-playwright-framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/beldeirawi01/sauce-demo-playwright-framework/actions/workflows/playwright.yml)
+
+End-to-end test framework for [SauceDemo](https://www.saucedemo.com), built with **Playwright + TypeScript** and the **Page Object Model**. It covers login, product browsing and sorting, the cart, checkout, logout, and the site's built-in user personas, and it publishes an HTML report from CI.
+
+**Live report:** https://beldeirawi01.github.io/sauce-demo-playwright-framework/ (updated on every push to `master`)
+
+![Playwright HTML report](docs/report.png)
 
 ## Tech Stack
 
-- **Playwright** — cross-browser end-to-end testing (Chromium, Firefox, WebKit)
-- **TypeScript** — typed page objects and test data
-- **Page Object Model (POM)** — separation of locators/actions from test logic
-- **GitHub Actions** — CI pipeline running the full suite on every push and pull request
+- **Playwright** running on Chromium, Firefox and WebKit
+- **TypeScript** for page objects, fixtures and test data
+- **Page Object Model** with locators and actions in `pages/`, assertions in `tests/`
+- **Custom fixtures** that create page objects and log in for you
+- **GitHub Actions** to run the suite and publish the report to GitHub Pages
 
 ## Project Structure
 
 ```
-├── pages/                  # Page Object classes — locators + actions, no assertions
+├── pages/                     # Page objects: locators and actions, no assertions
 │   ├── LoginPage.ts
-│   ├── InventoryPage.ts
+│   ├── InventoryPage.ts       # also holds sorting and logout
 │   ├── CartPage.ts
 │   └── CheckoutPage.ts
-├── test-data/               # Reusable test data, kept separate from test logic
-│   ├── LoginData.ts
-│   └── CheckoutData.ts
-├── tests/                    # Test specs — behavior + assertions
+├── test-data/
+│   ├── LoginData.ts           # valid users, invalid credentials, expected errors
+│   └── CheckoutData.ts        # valid and invalid customer details
+├── tests/
+│   ├── fixtures.ts            # loginPage, inventoryPage (logged in), cartPage, checkoutPage
 │   ├── login.spec.ts
-│   ├── inventory.spec.ts
-│   └── checkout.spec.ts
-├── .github/workflows/
-│   └── playwright.yml        # CI pipeline definition
-├── playwright.config.ts      # Base URL, browser projects, reporter config
-├── .env                      # Local environment config (not committed)
+│   ├── inventory.spec.ts      # inventory, sorting, logout
+│   ├── cart.spec.ts
+│   ├── checkout.spec.ts
+│   └── users.spec.ts          # built-in user types
+├── .github/workflows/playwright.yml
+├── playwright.config.ts
 └── tsconfig.json
 ```
 
-## Setup
+## How to Run
 
-1. Clone the repo and install dependencies:
+Install once:
+
+```bash
+npm install
+npx playwright install --with-deps
 ```
-   npm install
-   npx playwright install --with-deps
+
+Optional `.env` (the suite falls back to SauceDemo's public defaults without it):
+
 ```
-2. Create a `.env` file in the project root:
+BASE_URL=https://www.saucedemo.com
 ```
-   BASE_URL=https://www.saucedemo.com
-```
-   `playwright.config.ts` reads this via `dotenv` and falls back to the same default URL if the variable isn't set, so the suite still runs even without a `.env` file present.
 
-## Test Coverage
+| Command | What it does |
+| --- | --- |
+| `npx playwright test` | Everything, on all 3 browsers |
+| `npm run test:smoke` | Only `@smoke` tests (critical path) |
+| `npm run test:regression` | Only `@regression` tests |
+| `npx playwright test --project=chromium` | Everything, Chromium only |
+| `npx playwright test tests/cart.spec.ts` | One file |
+| `npx playwright test -g "Logout"` | Tests whose name matches |
+| `npx playwright show-report` | Open the last HTML report |
 
-**`login.spec.ts`** — covers the full login flow:
-- Successful login with a valid account, verified by URL redirect to the inventory page
-- Locked-out user, wrong password, empty username, and empty password — each asserting the exact error message SauceDemo displays
+On Windows PowerShell, use the npm scripts for tags. Typing `--grep @smoke` directly can fail because of how PowerShell treats `@`.
 
-**`inventory.spec.ts`** — covers the product/cart flow after login:
-- Page loads with the correct title and all 6 products visible
-- Adding a single product to the cart, verified via the cart badge count
-- Adding multiple products in a loop, with the expected cart count derived dynamically from the input array rather than hardcoded
-- Removing a product from the cart, verified by the badge disappearing once the cart is empty
-- Clicking the cart icon navigates to the correct URL
+## Test Plan
 
-**`checkout.spec.ts`** — covers the full purchase flow end-to-end, 20 tests across five grouped scenarios:
-- **Cart Page Navigation** — correct item count on the cart page, checkout/continue-shopping buttons visible, and returning to inventory via "Continue Shopping"
-- **Checkout Step One (Customer Information)** — successful continuation with valid info (including an alternate customer profile), and validation errors for each empty required field individually and all fields empty at once; also confirms "Cancel" on this step returns to the cart
-- **Checkout Step Two (Order Overview)** — cart items, subtotal, tax, and total labels all render, the finish button is visible, and confirms "Cancel" on this step returns to inventory (different destination than step one's cancel — verified explicitly rather than assumed)
-- **Checkout Complete** — order submission redirects to the confirmation URL and displays the "Thank you for your order!" header
-- **Full Checkout Journey** — one end-to-end test walking cart → checkout info → order overview → confirmation in a single pass, as a canonical smoke test alongside the more granular per-screen tests above
+**Scope.** Customer-facing flows on SauceDemo: authentication, product list and sorting, cart management, checkout, logout and session handling, and the built-in user personas.
 
-## Design Decisions
+**Out of scope.** Performance and load testing, accessibility audits, visual regression, mobile viewports, and API testing (SauceDemo has no API).
 
-- **Page Object Model**: locators and page actions live in `pages/`, completely separate from test logic and assertions in `tests/`. This keeps tests readable (they describe *behavior*, not implementation) and means a locator only needs to be updated in one place if the UI changes.
-- **`data-test` attributes over `id`/`class`**: SauceDemo tags most interactive elements with a `data-test` attribute specifically intended for automation, which is more resilient to styling or markup changes than targeting `id` or `class`. Every locator in this project was verified directly against the real DOM in DevTools rather than assumed from naming conventions.
-- **Dynamic, parameterized locators**: the inventory page has one "Add to cart" button per product, each with a unique `data-test` value following a predictable pattern (`add-to-cart-<product-slug>`). Rather than writing six near-identical methods, `InventoryPage.addToCart(productSlug)` and `removeFromCart(productSlug)` build the locator dynamically using a template literal, so one method handles any product — including ones added to the site in the future.
-- **Data-driven assertions**: the "add multiple items" test derives its expected cart count from `productsToAdd.length` rather than a hardcoded number, so the assertion stays correct even if the list of products being tested changes.
-- **Structured, reusable test data**: valid and invalid scenarios live in `test-data/`, separate from test logic, so credentials, customer info, and expected error messages aren't duplicated across test files. `CheckoutData.ts` extends this further with multiple valid customer profiles (standard, alternative, international, hyphenated names) and a wider matrix of invalid/edge-case inputs (individual empty fields, all fields empty, special characters, very long input, numeric postal codes), so new edge cases can be added as data rather than new test logic.
-- **Composed, full-journey testing**: `checkout.spec.ts` reuses `LoginPage` and `InventoryPage` from earlier in the suite via a shared `beforeEach`, chaining login → add to cart → cart → checkout rather than testing checkout in isolation. Tests are grouped into nested `describe` blocks that mirror the actual UI flow (cart → step one → step two → complete → full journey), making it straightforward to locate or extend tests for a specific screen.
+**Approach**
+- Black-box UI tests through page objects. Assertions live in the specs, not the page objects.
+- Every test is independent and starts from a fresh browser context. Setup (login, adding items to the cart) is handled by fixtures or `beforeEach`.
+- Assertions use Playwright's auto-retrying checks (`toHaveURL`, `toHaveText`, `toHaveCount`), not one-time reads like `page.url()`.
+- Test data lives in `test-data/`, so a new case is usually a new data row.
+- Tests are tagged by purpose: **`@smoke`** for the critical path and **`@regression`** for everything else. A test carries one tag or the other.
+
+**Entry and exit.** Entry: the site is reachable and dependencies are installed. Exit: all tests pass on all 3 browsers. Tests marked as known defects count as passing while the defect exists.
+
+**Known defects.** `problem_user` has products whose Add or Remove button does not work. The per-product test in `users.spec.ts` lists those products in `brokenProducts` and marks them with `test.fail()`. The suite stays green while the bug exists, and a listed test turns red if the site ever fixes it, which tells you to update the list.
+
+## Coverage Summary
+
+52 tests across 3 browsers = 156 executions. 6 tests are `@smoke` (18 executions) and 46 are `@regression` (138 executions).
+
+| Area | Spec | Tests | Covers |
+| --- | --- | ---: | --- |
+| Login | `login.spec.ts` | 9 | valid login; locked-out user; wrong password; empty username; empty password; unknown username; wrong-case username; error banner dismissal; direct access to the inventory page without logging in |
+| Inventory | `inventory.spec.ts` | 5 | page title and 6 products; add to cart; add all items; remove from cart; cart navigation |
+| Sorting | `inventory.spec.ts` | 4 | name A to Z and Z to A; price low to high and high to low |
+| Logout | `inventory.spec.ts` | 1 | logout returns to the login page |
+| Cart | `cart.spec.ts` | 5 | names match what was added; remove one item; remove all items; cart survives a reload; empty cart |
+| Checkout | `checkout.spec.ts` | 20 | cart page; customer info validation; order overview; order completion; end-to-end flow |
+| Built-in users | `users.spec.ts` | 8 | `performance_glitch_user` slow login; `problem_user` login and per-product Add/Remove with known defects |
+
+`locked_out_user` is covered in `login.spec.ts`.
+
+## Reporting
+
+- An **HTML report** is generated on every run (`playwright-report/`).
+- **On failure** the report includes a screenshot and a full trace (DOM snapshots, network and console for every step).
+- **In CI** the report is uploaded as a build artifact and published to GitHub Pages.
 
 ## CI/CD
 
-Every push and pull request to `main`/`master` triggers the full suite — 30 tests — across all three browsers via GitHub Actions (`.github/workflows/playwright.yml`). The pipeline installs dependencies, installs Playwright's browser binaries fresh on each run, executes the tests, and uploads the HTML report as a downloadable artifact regardless of pass/fail. `BASE_URL` is injected via a GitHub Actions repository secret rather than committed to the repo.
+`.github/workflows/playwright.yml` runs on every push and pull request to `main`/`master`:
+
+1. `npm ci`, then install the Playwright browsers
+2. Run the full suite on Chromium, Firefox and WebKit
+3. Upload the HTML report as an artifact (kept 30 days)
+4. A second job, `publish-report`, deploys the report to GitHub Pages. It is skipped on pull requests and runs even when tests fail, so a failing run still has a report.
+
+`BASE_URL` and the user and password overrides come from repository secrets. Blank or missing secrets fall back to SauceDemo's defaults. Publishing needs **Settings → Pages → Source: GitHub Actions**, set once.
+
+## Design Decisions
+
+- **Page Object Model.** Locators and actions live in `pages/`, and tests read as user steps. A UI change is fixed in one place.
+- **`data-test` locators.** SauceDemo's automation hook is more stable than CSS classes.
+- **Fixtures.** `inventoryPage` logs in as `standard_user` before the test starts, so specs don't repeat login steps.
+- **Data-driven tests.** Credentials, error messages and customer details live in `test-data/`. The `problem_user` Add/Remove test is generated from a product list.
+- **Waiting assertions.** `expect(locator)` checks retry until they pass or time out. Early versions that used `.count()` or `page.url()` were flaky across browsers, and switching fixed them.
+- **Known defects as tests.** `test.fail()` keeps real site defects visible without breaking the build.
 
 ## Future Improvements
 
-- Assert the computed subtotal, tax, and total against exact expected dollar amounts (data structured for this in `CheckoutData.ts`, not yet wired into assertions)
-- Sorting dropdown tests (verify product order changes for each sort option)
-- Logout flow test
-- API-level test coverage, if/where the application under test exposes one
+- Cover `error_user` and `visual_user` behaviour beyond login
+- More `problem_user` defects
+- Visual regression checks for `visual_user`
+- Accessibility checks with `@axe-core/playwright`
+- Mobile viewport projects
+- Sharding in CI as the suite grows
+- Allure reporting for trend history
