@@ -38,7 +38,51 @@ test.describe("Login Page Functionality", () => {
             await expect (loginPage.errorMessage).toContainText(InvalidLoginData.emptyPassword.expectedError)
         })
     })
+
+    test.describe("Unknown Username", { tag: "@regression" }, () => {
+        test("Validate wrong credentials with unknown username", async ({ page, loginPage }) => {
+            await loginPage.login(
+                InvalidLoginData.unknownUser.username, 
+                InvalidLoginData.unknownUser.password
+            )
+            await expect (loginPage.errorMessage).toContainText(InvalidLoginData.unknownUser.expectedError)
+            await expect (page).not.toHaveURL(/inventory/)
+        })
+    })
+
+    test.describe("Wrong Case Username", { tag: "@regression" }, () => {
+        test("Validate wrong credentials with wrong-case username", async ({ page, loginPage }) => {
+            await loginPage.login(
+                InvalidLoginData.wrongCaseUsername.username,
+                InvalidLoginData.wrongCaseUsername.password
+            )
+            await expect (loginPage.errorMessage).toContainText(InvalidLoginData.wrongCaseUsername.expectedError)
+            await expect (page).not.toHaveURL(/inventory/)
+        })
+    })
+
+    test.describe("Dismiss Error Banner", { tag: "@regression" }, () => {
+        test("Validate that the error message can be dismissed", async ({ loginPage }) => {
+            await loginPage.login(
+                InvalidLoginData.emptyUsername.username,
+                InvalidLoginData.emptyUsername.password
+            )
+            await expect (loginPage.errorMessage).toBeVisible()
+            await loginPage.errorDismissButton.click()
+            await expect (loginPage.errorMessage).toHaveCount(0)
+        })
+    })
+
+    test.describe("Access without Login", { tag: "@regression" }, () => {
+        test("Validate that the user can't access the inventory page without login", async ({ page, loginPage }) => {
+            await page.goto("/inventory.html")
+            await expect (loginPage.errorMessage).toContainText("You can only access '/inventory.html' when you are logged in.")
+            await expect (page).not.toHaveURL(/inventory/)
+        })
+    })
+
 });
+
 
 
 

@@ -49,6 +49,18 @@ export const InvalidLoginData = {
         username: process.env.STANDARD_USER || "standard_user",
         password: "",
         expectedError: "Epic sadface: Password is required"
+    },
+
+    unknownUser: {
+        username: process.env.UNKNOWN_USER || "unknown_user",
+        password: process.env.SHARED_PASSWORD || "secret_sauce",
+        expectedError: "Epic sadface: Username and password do not match any user in this service"
+    },
+
+    wrongCaseUsername: {
+        username: "STANDARD_USER",
+        password: process.env.SHARED_PASSWORD || "secret_sauce",
+        expectedError: "Epic sadface: Username and password do not match any user in this service"
     }
 
 }
