@@ -62,4 +62,20 @@ test.describe("Inventory Page Functionality", () => {
             expect(itemNames).toEqual(sortedNames);
         })
     })
+
+    test.describe("Sort Items By Price", { tag: "@regression" }, () => {
+        test("Validate Sorting Low to High", async ({ inventoryPage }) => {
+            await inventoryPage.sortBy('lohi')
+            const itemPrices = await inventoryPage.getItemPrices();
+            const sortedPrices = [...itemPrices].sort((a, b) => parseFloat(a) - parseFloat(b));
+            expect(itemPrices).toEqual(sortedPrices);
+        })
+
+        test("Validate Sorting High to Low", async ({ inventoryPage }) => {
+            await inventoryPage.sortBy('hilo')
+            const itemPrices = await inventoryPage.getItemPrices();
+            const sortedPrices = [...itemPrices].sort((a, b) => parseFloat(b) - parseFloat(a));
+            expect(itemPrices).toEqual(sortedPrices);
+        })
+    })
 })
