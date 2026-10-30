@@ -78,4 +78,12 @@ test.describe("Inventory Page Functionality", () => {
             expect(itemPrices).toEqual(sortedPrices);
         })
     })
+
+    test.describe("Logout", { tag: "@smoke" }, () => {
+        test("Validate Logout and Return to Login Page", async ({ page, inventoryPage, loginPage }) => {
+            await inventoryPage.logOut()
+            expect (page.url()).toContain('/')
+            await expect (loginPage.submitButton).toBeVisible()
+        })
+    })
 })

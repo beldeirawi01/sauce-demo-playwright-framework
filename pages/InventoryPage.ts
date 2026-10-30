@@ -9,6 +9,8 @@ export class InventoryPage {
     readonly sortDropdown: Locator;
     readonly itemsNames: Locator;
     readonly itemPrices: Locator;
+    readonly menuButton: Locator;
+    readonly logoutLink: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -19,6 +21,8 @@ export class InventoryPage {
         this.sortDropdown = this.page.locator('[data-test="product-sort-container"]');
         this.itemsNames = this.page.locator('[data-test="inventory-item-name"]');
         this.itemPrices = this.page.locator('[data-test="inventory-item-price"]');
+        this.menuButton = this.page.locator('#react-burger-menu-btn');
+        this.logoutLink = this.page.locator('[data-test="logout-sidebar-link"]');
     }
 
     async addToCart(productSlug: string) {
@@ -39,6 +43,11 @@ export class InventoryPage {
 
     async getItemPrices(): Promise<string[]> {
         return (await this.itemPrices.allTextContents()).map(price => price.replace('$', ''));
+    }
+
+    async logOut() {
+        await this.menuButton.click();
+        await this.logoutLink.click();
     }
 }
 
