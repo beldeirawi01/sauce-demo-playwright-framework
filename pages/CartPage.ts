@@ -6,6 +6,7 @@ export class CartPage {
     readonly cartItems: Locator;
     readonly checkoutButton: Locator;
     readonly continueShoppingButton: Locator;
+    readonly itemNames: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -13,6 +14,7 @@ export class CartPage {
         this.cartItems = this.page.locator('[data-test="inventory-item"]');
         this.checkoutButton = this.page.locator('[data-test="checkout"]');
         this.continueShoppingButton = this.page.locator('[data-test="continue-shopping"]');
+        this.itemNames = this.page.locator('[data-test="inventory-item-name"]');
     }
 
     async getCartItemCount(): Promise<number> {
