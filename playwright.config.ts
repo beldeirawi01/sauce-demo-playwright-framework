@@ -38,17 +38,26 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: '**/api/**',
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
+      testIgnore: '**/api/**',
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
+      testIgnore: '**/api/**',
       use: { ...devices['Desktop Safari'] },
+    },
+    
+    {
+      name: 'api',
+      testMatch: '**/api/**/*.spec.ts',
+      use: { baseURL: process.env.API_BASE_URL || 'https://restful-booker.herokuapp.com' },
     },
 
     /* Test against mobile viewports. */
