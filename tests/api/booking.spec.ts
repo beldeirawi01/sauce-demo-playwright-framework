@@ -1,4 +1,27 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, APIRequestContext } from '@playwright/test';
+
+async function getToken(request: APIRequestContext): Promise<string> {
+    const response = await request.post('/auth', {
+        data: { username: 'admin', password: 'password123' }
+    });
+    return (await response.json()).token;
+}
+
+async function createBooking(request: APIRequestContext): Promise<number> {
+    const response = await request.post('/booking', {
+        data: {
+            firstname: 'Jane',
+            lastname: 'Tester',
+            totalprice: 150,
+            depositpaid: true,
+            bookingdates: { checkin: '2026-12-01', checkout: '2026-12-05' },
+            additionalneeds: 'Breakfast'
+        }
+    });
+    return (await response.json()).bookingid;
+}
+
+
 
 test.describe("Booking API", { tag: "@api" }, () => {
     test("GET /booking returns a list of booking ids", async ({ request }) => {
@@ -50,6 +73,41 @@ test.describe("Booking API", { tag: "@api" }, () => {
         expect(getResponse.status()).toBe(200);
         expect(await getResponse.json()).toMatchObject(newBooking);
     });
+
+    test("PUT /booking/{id} updates a booking", async ({ request }) => {
+        const token = await getToken(request);
+        const id = await createBooking(request);
+
+        const updated = {
+            firstname: 'Janet',
+            lastname: 'Updated',
+            totalprice: 200,
+            depositpaid: false,
+            bookingdates: { checkin: '2026-12-10', checkout: '2026-12-15' },
+            additionalneeds: 'Late checkout'
+        };
+
+        const response = await request.put(`/booking/${id}`, {
+            data: updated,
+            headers: { Cookie: `token=${token}`, Accept: 'application/json' }
+        });
+        expect(response.status()).toBe(200);
+        expect(await response.json()).toMatchObject(updated);
+    });
+
+    test("DELETE /booking/{id} deletes a booking", async ({ request }) => {
+        const token = await getToken(request);
+        const id = await createBooking(request);
+
+        const deleteResponse = await request.delete(`/booking/${id}`, {
+            headers: { Cookie: `token=${token}` }
+        });
+        expect(deleteResponse.status()).toBe(201);
+
+        const getResponse = await request.get(`/booking/${id}`);
+        console.log('get after delete:', getResponse.status());
+        expect(getResponse.status()).toBe(404);
+    })
 });
 
 test.describe("Auth API", { tag: "@api" }, () => {
