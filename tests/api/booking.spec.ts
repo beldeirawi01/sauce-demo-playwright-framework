@@ -108,6 +108,47 @@ test.describe("Booking API", { tag: "@api" }, () => {
         console.log('get after delete:', getResponse.status());
         expect(getResponse.status()).toBe(404);
     })
+
+    test("PUT /booking/{id} without a token is rejected", async ({ request }) => {
+        const id = await createBooking(request);
+
+        const response = await request.put(`/booking/${id}`, {
+            data: { firstname: 'No', lastname: 'Token', totalprice: 1, depositpaid: true,
+                    bookingdates: { checkin: '2026-12-01', checkout: '2026-12-02' } },
+            headers: { Accept: 'application/json' }
+        });
+        
+        expect(response.status()).toBe(403);
+        const getResponse = await request.get(`/booking/${id}`);
+        expect(getResponse.status()).toBe(200);
+        expect((await getResponse.json()).firstname).toBe('Jane');
+    });
+
+    test("DELETE /booking/{id} without a token is rejected", async ({ request }) => {
+        const id = await createBooking(request);
+
+        const response = await request.delete(`/booking/${id}`);
+        expect(response.status()).toBe(403);
+
+        const getResponse = await request.get(`/booking/${id}`);
+        expect(getResponse.status()).toBe(200);
+        expect((await getResponse.json()).firstname).toBe('Jane');
+
+    })
+
+    test("POST /booking with a missing required field is rejected", async ({ request }) => {
+        test.fail(true, "Restful-booker returns 500 instead of a 4xx status when a required field is missing");
+        
+        const response = await request.post('/booking', {
+            data: {
+                lastname: 'Tester',
+                totalprice: 150,
+                depositpaid: true,
+                bookingdates: { checkin: '2026-12-01', checkout: '2026-12-05' }
+            }
+        });
+        expect(response.status()).toBe(400);
+    });
 });
 
 test.describe("Auth API", { tag: "@api" }, () => {
